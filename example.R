@@ -1,15 +1,15 @@
 # Example
 library(rjobs)
-redisConnect()  # requires a running redis server
+init('config.yml')
 # redisFlushDB()
 
 # Create new job
-job1 <- create_job('myquery1')
-job2 <- create_job('myquery2')
-job3 <- create_job('myquery3')
+job1 <- create_job('exa', 'select * from a')
+job2 <- create_job('exa', 'select * from b')
+job3 <- create_job('psql', 'select * from c')
+info()
 
 start_job(job2)
-
 info()
 
 # Delete job (and kill ongoing process)

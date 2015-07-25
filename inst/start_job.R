@@ -1,7 +1,12 @@
 #!/usr/local/bin/r
 suppressMessages(require(rredis))
-redisConnect()
-job_id <- argv[1]
+suppressMessages(require(yaml))
+
+config <- argv[1]
+job_id <- argv[2]
+
+cfg <- suppressWarnings(yaml.load_file(config))
+do.call('redisConnect', cfg$redis)
 
 job <- redisHGetAll(job_id)
 job$status <- 'started'
@@ -10,7 +15,14 @@ job$process_id <- Sys.getpid()
 redisHMSet(job_id, job)
 redisHDel(job_id, 'ended_at')
 
-Sys.sleep(60)
+Sys.sleep(10)
+switch(cfg$connections[[job$conn]]$src,
+  'exasol' = message('exasol!'),
+  'postgresql' = message('postgresql!'),
+  warning('Unsupported connection ...')
+)
+
+## SWITCH DATABASES
 # data <- sample(mtcars)
 # output <- tempfile(fileext = '.rds')
 # saveRDS(data, output)

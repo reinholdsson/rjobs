@@ -1,7 +1,21 @@
 #' @export
-create_job <- function(fun, input) {
+init <- function(config) {
+  cfg <- suppressWarnings(yaml.load_file(config))
+  .RJOBS_CONFIG <<- config
+  do.call('redisConnect', cfg$redis)
+  #redisConnect()  # requires a running redis server
+}
+
+#' @export
+create_job <- function(conn, query) {
   job_id <- basename(tempfile(pattern = ''))
-  redisHMSet(job_id, list(fun = 'myfunction', created_at = Sys.time(), input = input, status = 'created'))
+  redisHMSet(job_id, list(
+    created_at = Sys.time(),
+    query = query,
+    status = 'created',
+    conn = conn,
+    user = Sys.info()[['user']]
+  ))
   return(job_id)
 }
 
@@ -10,13 +24,13 @@ start_job <- function(job_id) {
   status <- redisHGet(job_id, 'status')
   if (is.null(status)) stop("Job doesn't exist ...")
   else if (status == 'started') stop("Job is already running ...")
-  system2('r', args = c(system.file('start_job.R', package = 'rjobs'), job_id), wait = F)
+  system2('r', args = c(system.file('start_job.R', package = 'rjobs'), c(.RJOBS_CONFIG, job_id)), wait = F)
 }
 
 #' @export
 info <- function() {
-  # rbindlist(lapply(redisKeys(), function(i) data.table(job_id = i, t(redisHGetAll(i)))), use.names = T, fill = T)
-  rbindlist(lapply(redisKeys(), function(i) c(job_id = i, redisHGetAll(i))), fill = T)
+  rbindlist(lapply(redisKeys(), function(i) data.table(job_id = i, t(redisHGetAll(i)))), use.names = T, fill = T)
+  # rbindlist(lapply(redisKeys(), function(i) c(job_id = i, redisHGetAll(i))), fill = T, use.names = T)
 }
 
 #' @export
