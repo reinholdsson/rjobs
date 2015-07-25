@@ -1,0 +1,10 @@
+Package: rjobs
+Type: Package
+Title: R Jobs
+Version: 1.0
+Date: 2015-07-25
+Author: Thomas Reinholdsson
+Maintainer: Thomas Reinholdsson <reinholdsson@gmail.com>
+Description: ...
+License: ...
+Depends: data.table, rredis, tools
