@@ -1,0 +1,14 @@
+redis:
+  host: 'localhost'
+  port: 6379
+connections:
+  psql:
+    src: 'postgres'
+    dbname: 'mydb'
+    host: '192.168.0.1'
+    port: 3456
+  exa:
+    src: 'exasol'
+    dbname: 'testdb'
+    host: '192.168.0.2'
+    port: 5432
