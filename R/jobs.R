@@ -7,14 +7,15 @@ init <- function(config) {
 }
 
 #' @export
-create_job <- function(conn, query) {
+create_job <- function(conn, query, desc = NULL) {
   job_id <- basename(tempfile(pattern = ''))
   redisHMSet(job_id, list(
     created_at = Sys.time(),
     query = query,
     status = 'created',
     conn = conn,
-    user = Sys.info()[['user']]
+    user = Sys.info()[['user']],
+    desc = desc
   ))
   return(job_id)
 }
@@ -29,7 +30,7 @@ start_job <- function(job_id) {
 
 #' @export
 info <- function() {
-  rbindlist(lapply(redisKeys(), function(i) data.table(job_id = i, t(redisHGetAll(i)))), use.names = T, fill = T)
+  rbindlist(lapply(redisKeys(), function(i) data.table(job_id = i, t(redisHMGet(i, c('user', 'conn', 'desc', 'created_at', 'started_at', 'ended_at'))))), use.names = T, fill = T)
   # rbindlist(lapply(redisKeys(), function(i) c(job_id = i, redisHGetAll(i))), fill = T, use.names = T)
 }
 

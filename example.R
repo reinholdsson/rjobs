@@ -4,9 +4,9 @@ init('config.yml')
 # redisFlushDB()
 
 # Create new job
-job1 <- create_job('exa', 'select * from a')
-job2 <- create_job('exa', 'select * from b')
-job3 <- create_job('psql', 'select * from c')
+job1 <- create_job('exa', 'select * from a', 'job1')
+job2 <- create_job('exa', 'select * from b', 'job2')
+job3 <- create_job('psql', 'select * from c', 'job3')
 info()
 
 start_job(job2)

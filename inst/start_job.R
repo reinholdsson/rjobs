@@ -16,9 +16,15 @@ redisHMSet(job_id, job)
 redisHDel(job_id, 'ended_at')
 
 Sys.sleep(10)
-switch(cfg$connections[[job$conn]]$src,
-  'exasol' = message('exasol!'),
-  'postgresql' = message('postgresql!'),
+output <- switch(cfg$connections[[job$conn]]$src,
+  'exasol' = {
+    message('exasol!')
+    mtcars
+  },
+  'postgres' = {
+    message('postgresql!')
+    cars
+  },
   warning('Unsupported connection ...')
 )
 
@@ -26,7 +32,6 @@ switch(cfg$connections[[job$conn]]$src,
 # data <- sample(mtcars)
 # output <- tempfile(fileext = '.rds')
 # saveRDS(data, output)
-output <- mtcars
 
 # Finished
 job$status <- 'ended'
