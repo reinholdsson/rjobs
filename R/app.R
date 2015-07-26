@@ -30,11 +30,12 @@ job_app <- function(config = '~/.rjobs.yaml') {
       textInput('desc', 'Job Description:'),
       aceEditor('query', '', mode = 'sql', theme = 'github'),
       
-      actionButton('add', 'add', icon = icon('plus')),
-      actionButton('start', 'start', icon = icon('play')),
-      actionButton('delete', 'delete', icon = icon('minus')),
+      actionButton('add', '', icon = icon('plus')),
+      actionButton('delete', '', icon = icon('minus')),
+      actionButton('start', '', icon = icon('play')),
+      actionButton('refresh', '', icon = icon('refresh')),
+      downloadButton('downloadData', 'Download'),
       
-      actionButton('refresh', 'refresh', icon = icon('refresh')),
       dataTableOutput(outputId = 'jobs_table')
     ),
     server = function(input, output, session) {
@@ -82,6 +83,12 @@ job_app <- function(config = '~/.rjobs.yaml') {
       selected_jobs <- reactive({
         j <- input$jobs
         sapply(j[str_is_num(names(j))], function(i) i[[1]])
+      })
+      
+      output$downloadData <- downloadHandler(
+        filename = function() { paste('myreport', '.xlsx', sep='') },
+        content = function(file) {
+          df_to_xlsx(get_jobs_output(isolate(selected_jobs())), file)
       })
     }
   )

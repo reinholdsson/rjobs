@@ -62,5 +62,19 @@ delete_job <- function(job_id) {
   return(T)
 }
 
+#' @export
+get_jobs_output <- function(jobs) {
+  x <- lapply(jobs, function(i) {
+    res <- list(redisHGet(i, 'output'))
+    names(res) <- paste('job', i, sep = '_')
+    return(res)
+  })
+  
+  # remove empty
+  x <- x[sapply(x, function(i) !is.null(i[[1]]))]
+  
+  return(x)
+}
+
 # replace_null <- function(DT, val = NA) sapply(DT, function(x) ifelse(x == "NULL", val, x))
 
