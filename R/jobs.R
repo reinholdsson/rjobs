@@ -23,9 +23,16 @@ create_job <- function(conn, query, desc = NULL) {
 #' @export
 start_job <- function(job_id) {
   status <- redisHGet(job_id, 'status')
-  if (is.null(status)) stop("Job doesn't exist ...")
-  else if (status == 'started') stop("Job is already running ...")
-  system2('r', args = c(system.file('start_job.R', package = 'rjobs'), c(.RJOBS_CONFIG, job_id)), wait = F)
+  if (is.null(status)) {
+    warning("Job doesn't exist ...")
+    return(F)
+  } else if (status == 'started') {
+    warning("Job is already running ...")
+    return(F)
+  }
+  system2('Rscript', args = c(system.file('start_job.R', package = 'rjobs'), c(.RJOBS_CONFIG, job_id)), wait = F)
+  message(sprintf('%s started ...', job_id))
+  return(T)
 }
 
 #' @export
@@ -43,7 +50,10 @@ info <- function() {
 
 #' @export
 delete_job <- function(job_id) {
-  if (is.null(redisHGet(job_id, 'status'))) stop("job id doesn't exist")
+  if (is.null(redisHGet(job_id, 'status'))) {
+    warning("job id doesn't exist")
+    return(F)
+  }
   
   pid <- redisHGet(job_id, 'process_id')
   if (!is.null(pid)) pskill(pid, SIGKILL)  # why doesn't it return TRUE first time??

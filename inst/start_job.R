@@ -1,7 +1,8 @@
-#!/usr/local/bin/r
+#!/usr/local/bin/Rscript
 suppressMessages(require(rredis))
 suppressMessages(require(yaml))
 
+argv <- commandArgs(trailingOnly = TRUE)
 config <- argv[1]
 job_id <- argv[2]
 
@@ -15,7 +16,7 @@ job$process_id <- Sys.getpid()
 redisHMSet(job_id, job)
 redisHDel(job_id, 'ended_at')
 
-Sys.sleep(10)
+Sys.sleep(30)
 output <- switch(cfg$connections[[job$conn]]$src,
   'exasol' = {
     message('exasol!')
