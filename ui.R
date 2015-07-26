@@ -2,7 +2,7 @@ rm(list = ls())
 library(shiny)
 library(shinyAce)
 library(rjobs)
-conns <- names(yaml.load_file('config.yml')$connections)
+conns <- names(suppressWarnings(yaml.load_file('config.yml')$connections))
 
 shinyUI(bootstrapPage(
   selectInput('conn', 'Connection:', conns),
@@ -11,6 +11,6 @@ shinyUI(bootstrapPage(
   
   actionButton('add', 'add', icon = icon('plus')),
   actionButton('refresh', 'refresh', icon = icon('refresh')),
-
+  textOutput('rows_out'),
   dataTableOutput(outputId = 'jobs_table')
 ))
