@@ -30,8 +30,15 @@ start_job <- function(job_id) {
 
 #' @export
 info <- function() {
-  rbindlist(lapply(redisKeys(), function(i) data.table(job_id = i, t(redisHMGet(i, c('user', 'conn', 'desc', 'created_at', 'started_at', 'ended_at'))))), use.names = T, fill = T)
-  # rbindlist(lapply(redisKeys(), function(i) c(job_id = i, redisHGetAll(i))), fill = T, use.names = T)
+  DT <- rbindlist(lapply(redisKeys(), function(i) 
+    cbind(job_id = i, as.data.table(lapply(redisHMGet(i, c('user', 'conn', 'desc', 'created_at', 'started_at', 'ended_at', 'status')), function(i) if (is.null(i)) NA else i)))
+  ), use.names = T, fill = T)
+  DT[, c('created_at', 'started_at', 'ended_at') := list(
+    as.POSIXct(created_at, origin = '1970-01-01'),
+    as.POSIXct(started_at, origin = '1970-01-01'),
+    as.POSIXct(ended_at, origin = '1970-01-01')
+  )]
+  return(DT)
 }
 
 #' @export
@@ -44,3 +51,6 @@ delete_job <- function(job_id) {
   redisDelete(job_id)
   return(T)
 }
+
+# replace_null <- function(DT, val = NA) sapply(DT, function(x) ifelse(x == "NULL", val, x))
+
