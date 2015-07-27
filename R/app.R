@@ -5,6 +5,7 @@ job_app <- function(config = '~/.rjobs.yaml') {
   require(shiny)
   require(shinyAce)
   require(rjobs)
+  library(shinydashboard)
   
   init(config)
   conns <- names(suppressWarnings(yaml.load_file(config)$connections))
@@ -25,27 +26,49 @@ job_app <- function(config = '~/.rjobs.yaml') {
   }
   
   shinyApp(
-    ui = bootstrapPage(
-      selectInput('conn', 'Connection:', conns),
-      textInput('desc', 'Job Description:'),
-      aceEditor('query', '', mode = 'sql', theme = 'github'),
-      
-      actionButton('add', '', icon = icon('plus')),
-      actionButton('delete', '', icon = icon('minus')),
-      actionButton('start', '', icon = icon('play')),
-      actionButton('refresh', '', icon = icon('refresh')),
-      downloadButton('downloadData', 'Download'),
-      
-      dataTableOutput(outputId = 'jobs_table')
+    ui = dashboardPage(skin = 'black',
+      dashboardHeader(titleWidth = 275,
+        title = 'R A D H O C'
+      ),
+      dashboardSidebar(width = 275,
+        selectInput('conn', 'Connection:', conns),
+        textInput('desc', 'Job description:'),
+        HTML('<label for = "query">Query:</label>'),
+        aceEditor('query', '', mode = 'sql', theme = 'github', fontSize = 12),
+        HTML('<center>'), actionButton('add', ' Add', icon = icon('plus')), HTML('</center>')
+      ),
+      dashboardBody(
+        fluidRow(
+          box(width = 12,
+            actionButton('delete', ' Delete', icon = icon('minus')),
+            actionButton('start', ' Start', icon = icon('play')),
+            actionButton('refresh', ' Refresh', icon = icon('refresh')),
+            downloadButton('downloadData', ' Download')
+          ),
+          box(width = 12,
+            dataTableOutput(outputId = 'jobs_table'),
+            tags$style(type="text/css", '#jobs_table tfoot {display:none;}'),
+            textOutput('refresh_time')
+          )
+        )
+      )
     ),
     server = function(input, output, session) {
       output$jobs_table <- renderDataTable({
         refreshOnClick()
         info()
       },
-        options = list(paging = F),
+        options = list(
+          paging = T,
+          searching = T
+        ),
         callback = js_click_callback('jobs')
       )
+      
+      output$refresh_time <- renderText({
+        refreshOnClick()
+        sprintf('Last refresh at %s', Sys.time())
+      })
       
       refreshOnClick <- reactive({
         if (input$refresh == 0) return()
