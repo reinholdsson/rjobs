@@ -37,7 +37,9 @@ job_app <- function(config = '~/.rjobs.yaml') {
         selectInput('conn', 'Data Source:', conns),
         textInput('desc', 'Description:'),
         HTML('<label for = "query">Query:</label>'),
+        HTML('</center>'),
         aceEditor('query', '', mode = 'sql', theme = 'github', fontSize = 12),
+        HTML('<center>'),
         actionButton('add', ' Add', icon = icon('plus')),
         HTML('</center>')
       ),
@@ -47,13 +49,16 @@ job_app <- function(config = '~/.rjobs.yaml') {
             dataTableOutput(outputId = 'jobs_table'),
             tags$style(type="text/css", '#jobs_table tfoot {display:none;}')
           ),
-          box(width = 12,
+          box(title = 'Actions', width = 6,
             actionButton('delete', ' Delete', icon = icon('minus')),
             actionButton('start', ' Start', icon = icon('play')),
             actionButton('refresh', ' Refresh', icon = icon('refresh')),
             downloadButton('downloadData', ' Download'),
             br(), br(),
             textOutput('refresh_time')
+          ),
+          box(title = 'Query', width = 6,
+            verbatimTextOutput('job_info')
           )
         )
       )
@@ -88,6 +93,14 @@ job_app <- function(config = '~/.rjobs.yaml') {
         sprintf('Last refresh at %s', Sys.time())
       })
       
+      output$job_info <- renderText({
+        job_id <- head(selected_jobs(), 1)
+        if (length(job_id) == 1) {
+          job <- get_job_attr(job_id, c('query', 'message'))
+          sprintf('%s%s', job$query, ifelse(is.null(job$message), '', paste0('\n\n', job$message)) )
+        } else return()
+      })
+      
       refreshOnClick <- reactive({
         if (input$refresh == 0) return()
         message('refresh')
@@ -96,7 +109,6 @@ job_app <- function(config = '~/.rjobs.yaml') {
       observe({
         print(input$add)
         if (input$add == 0) return()
-        
         job_id <- create_job(isolate(input$conn), isolate(input$query), isolate(input$desc))
         message(sprintf('%s added ...', job_id))
       })
@@ -129,7 +141,10 @@ job_app <- function(config = '~/.rjobs.yaml') {
       output$downloadData <- downloadHandler(
         filename = function() { paste('myreport', '.xlsx', sep='') },
         content = function(file) {
-          df_to_xlsx(get_jobs_output(isolate(selected_jobs())), file)
+          jobs <- isolate(selected_jobs())
+          lst <- get_jobs_output(jobs)
+          lst$SOURCE_INFO <- info()[job_id %in% names(lst)]
+          df_to_xlsx(lst, file)
       })
     }
   )

@@ -38,7 +38,7 @@ start_job <- function(job_id) {
 #' @export
 info <- function() {
   DT <- rbindlist(lapply(redisKeys(), function(i) 
-    cbind(job_id = i, as.data.table(lapply(redisHMGet(i, c('user', 'conn', 'desc', 'created_at', 'started_at', 'ended_at', 'status')), function(i) if (is.null(i)) NA else i)))
+    cbind(job_id = i, as.data.table(lapply(redisHMGet(i, c('created_at', 'user', 'conn', 'desc', 'query', 'started_at', 'ended_at', 'status', 'message')), function(i) if (is.null(i)) NA else i)))
   ), use.names = T, fill = T)
   DT[, c('created_at', 'started_at', 'ended_at') := list(
     as.POSIXct(created_at, origin = '1970-01-01'),
@@ -64,16 +64,21 @@ delete_job <- function(job_id) {
 
 #' @export
 get_jobs_output <- function(jobs) {
-  x <- lapply(jobs, function(i) {
+  x <- sapply(jobs, function(i) {
     res <- list(redisHGet(i, 'output'))
-    names(res) <- paste('job', i, sep = '_')
+    #names(res) <- i #paste('job', i, sep = '_')
     return(res)
   })
+  names(x) <- jobs
   
   # remove empty
   x <- x[sapply(x, function(i) !is.null(i[[1]]))]
   
   return(x)
+}
+
+get_job_attr <- function(job_id, attr) {
+  redisHMGet(job_id, attr)
 }
 
 # replace_null <- function(DT, val = NA) sapply(DT, function(x) ifelse(x == "NULL", val, x))

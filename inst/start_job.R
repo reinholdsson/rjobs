@@ -29,7 +29,7 @@ tryCatch({
       a <- psql()
       a$fetch(job$query)
     },
-    warning('Unsupported connection ...')
+    stop('Unsupported connection ...')
   )
   job$status <- 'ended'
   job$ended_at <- Sys.time()
@@ -37,6 +37,7 @@ tryCatch({
 }, error = function(e) {
   job$status <<- 'error'
   job$ended_at <<- Sys.time()
+  job$message <<- as.character(e)
   message(sprintf('Job %s: %s', job_id, e))
 }, finally = {
   redisHMSet(job_id, job)
