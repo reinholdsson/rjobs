@@ -33,11 +33,13 @@ job_app <- function(config = '~/.rjobs.yaml') {
         title = 'R A D H O C'
       ),
       dashboardSidebar(width = 400,
-        selectInput('conn', 'Data source:', conns),
+        HTML('<center>'),
+        selectInput('conn', 'Data Source:', conns),
         textInput('desc', 'Description:'),
         HTML('<label for = "query">Query:</label>'),
         aceEditor('query', '', mode = 'sql', theme = 'github', fontSize = 12),
-        HTML('<center>'), actionButton('add', ' Add', icon = icon('plus')), HTML('</center>')
+        actionButton('add', ' Add', icon = icon('plus')),
+        HTML('</center>')
       ),
       dashboardBody(
         fluidRow(
@@ -61,9 +63,9 @@ job_app <- function(config = '~/.rjobs.yaml') {
         refreshOnClick()
         dt <- info()
         dt[, .(
-          `Job id` = job_id,
-          `Created at` = as.character(as.Date(created_at)),
-          `Data source` = conn,
+          `Job Id` = job_id,
+          `Added At` = as.character(as.Date(created_at)),
+          `Data Source` = conn,
           `Description` = desc,
           `Status` = swapply(status,
             'ended' = as.character(icon('check')),
