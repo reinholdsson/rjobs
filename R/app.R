@@ -25,29 +25,32 @@ job_app <- function(config = '~/.rjobs.yaml') {
     }", input_var)
   }
   
+  swapply <- function(x, ...) lapply(as.character(x), function(i) switch(i, ...))
+  
   shinyApp(
     ui = dashboardPage(skin = 'black',
-      dashboardHeader(titleWidth = 275,
+      dashboardHeader(titleWidth = 400,
         title = 'R A D H O C'
       ),
-      dashboardSidebar(width = 275,
-        selectInput('conn', 'Connection:', conns),
-        textInput('desc', 'Job description:'),
+      dashboardSidebar(width = 400,
+        selectInput('conn', 'Data source:', conns),
+        textInput('desc', 'Description:'),
         HTML('<label for = "query">Query:</label>'),
         aceEditor('query', '', mode = 'sql', theme = 'github', fontSize = 12),
         HTML('<center>'), actionButton('add', ' Add', icon = icon('plus')), HTML('</center>')
       ),
       dashboardBody(
         fluidRow(
+          box(title = 'Jobs', width = 12,
+            dataTableOutput(outputId = 'jobs_table'),
+            tags$style(type="text/css", '#jobs_table tfoot {display:none;}')
+          ),
           box(width = 12,
             actionButton('delete', ' Delete', icon = icon('minus')),
             actionButton('start', ' Start', icon = icon('play')),
             actionButton('refresh', ' Refresh', icon = icon('refresh')),
-            downloadButton('downloadData', ' Download')
-          ),
-          box(width = 12,
-            dataTableOutput(outputId = 'jobs_table'),
-            tags$style(type="text/css", '#jobs_table tfoot {display:none;}'),
+            downloadButton('downloadData', ' Download'),
+            br(), br(),
             textOutput('refresh_time')
           )
         )
@@ -56,7 +59,20 @@ job_app <- function(config = '~/.rjobs.yaml') {
     server = function(input, output, session) {
       output$jobs_table <- renderDataTable({
         refreshOnClick()
-        info()
+        dt <- info()
+        dt[, .(
+          `Job id` = job_id,
+          `Created at` = as.character(as.Date(created_at)),
+          `Data source` = conn,
+          `Description` = desc,
+          `Status` = swapply(status,
+            'ended' = as.character(icon('check')),
+            'error' = as.character(icon('exclamation-circle')),
+            'started' = as.character(icon('spinner')),
+            'created' = as.character(icon('circle-thin')),
+            ''
+          )
+        )]
       },
         options = list(
           paging = T,
