@@ -16,29 +16,30 @@ job$process_id <- Sys.getpid()
 redisHMSet(job_id, job)
 redisHDel(job_id, 'ended_at')
 
-Sys.sleep(30)
-output <- switch(cfg$connections[[job$conn]]$src,
-  'exasol' = {
-    message('exasol!')
-    mtcars
-  },
-  'postgres' = {
-    message('postgresql!')
-    cars
-  },
-  warning('Unsupported connection ...')
-)
-
-## SWITCH DATABASES
-# data <- sample(mtcars)
-# output <- tempfile(fileext = '.rds')
-# saveRDS(data, output)
-
-# Finished
-job$status <- 'ended'
-job$output <- output
-job$ended_at <- Sys.time()
-redisHMSet(job_id, job)
-redisHDel(job_id, 'process_id')
-
-message(sprintf('Job %s finished ...', job_id))
+#Sys.sleep(30)
+tryCatch({
+  job$output <- switch(cfg$connections[[job$conn]]$src,
+    'exasol' = {
+      message('exasol!')
+      mtcars
+    },
+    'postgres' = {
+      message('postgresql!')
+      require(rpsql)
+      a <- psql()
+      a$fetch(job$query)
+    },
+    warning('Unsupported connection ...')
+  )
+  job$status <- 'ended'
+  job$ended_at <- Sys.time()
+  message(sprintf('Job %s finished ...', job_id))
+}, error = function(e) {
+  job$status <<- 'error'
+  job$ended_at <<- Sys.time()
+  message(sprintf('Job %s: %s', job_id, e))
+}, finally = {
+  redisHMSet(job_id, job)
+  redisHDel(job_id, 'process_id')
+  message(sprintf('Job %s - process finished ...', job_id))
+})
