@@ -27,6 +27,10 @@ job_app <- function(config = '~/.rjobs.yaml') {
   
   swapply <- function(x, ...) lapply(as.character(x), function(i) switch(i, ...))
   
+  space <- function(x, ...) { 
+    format(x, ..., big.mark = " ", scientific = FALSE, trim = TRUE)
+  }
+  
   shinyApp(
     ui = dashboardPage(skin = 'black',
       dashboardHeader(titleWidth = 400,
@@ -72,12 +76,20 @@ job_app <- function(config = '~/.rjobs.yaml') {
           `Added At` = as.character(as.Date(created_at)),
           `Data Source` = conn,
           `Description` = desc,
-          `Status` = swapply(status,
+          `Finished At` = ifelse(status == 'ended',
+            as.character(ended_at),
+            NA
+          ),
+          `Query Time (s)` = ifelse(status == 'ended',
+            round(as.numeric(difftime(ended_at, started_at, units = 'secs')), 1),
+            NA
+          ),
+          ` ` = swapply(status,
             'ended' = as.character(icon('check')),
             'error' = as.character(icon('exclamation-circle')),
             'started' = as.character(icon('spinner')),
             'created' = as.character(icon('circle-thin')),
-            ''
+            NA
           )
         )]
       },
