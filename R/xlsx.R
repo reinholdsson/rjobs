@@ -1,8 +1,8 @@
 #' @export
 df_to_xlsx <- function(input, output = tempfile(pattern = 'data_', fileext = '.xlsx')) {
   options(
-    xlsx.date.format = 'yyyy-mm-dd',
-    xlsx.datetime.format = 'yyyy-mm-dd hh:mm:ss'
+    openxlsx.dateFormat = 'yyyy-mm-dd',
+    openxlsx.datetimeFormat = 'yyyy-mm-dd hh:mm:ss'
   )
   
   # Allow input as several arguments
@@ -13,11 +13,14 @@ df_to_xlsx <- function(input, output = tempfile(pattern = 'data_', fileext = '.x
     input <- input[[1]]
   }
   
+  wb <- openxlsx::createWorkbook()
   for(i in 1:length(input)) {
     nm <- names(input)[[i]]
     sheet_name <- if (!is.null(nm) && nchar(nm) > 0) nm else basename(tempfile())
-    write.xlsx2(x = input[[i]], file = output, sheetName = sheet_name, row.names = F, append = T, showNA = F)
+    openxlsx::addWorksheet(wb, sheet_name)
+    openxlsx::writeData(wb, sheet_name, input[[i]], rowNames = F)
   }
   
+  openxlsx::saveWorkbook(wb, output, overwrite = T)
   return(output)
 }
