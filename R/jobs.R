@@ -64,13 +64,10 @@ delete_job <- function(job_id) {
 
 #' @export
 get_jobs_output <- function(jobs) {
-  x <- sapply(jobs, function(i) {
-    res <- list(redisHGet(i, 'output'))
-    #names(res) <- i #paste('job', i, sep = '_')
-    return(res)
+  x <- lapply(jobs, function(i) {
+    redisHGet(i, 'output')
   })
-  names(x) <- jobs
-  
+  names(x) <- sapply(jobs, function(i) { redisHGet(i, 'desc') })
   # remove empty
   x <- x[sapply(x, function(i) !is.null(i[[1]]))]
   

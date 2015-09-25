@@ -1,3 +1,26 @@
+get_table_info <- function(conn) {
+  tryCatch({
+    output <- switch(conn,
+      'exasol' = {
+        message('exasol!')
+        mtcars
+      },
+      'postgres' = {
+        message('postgresql!')
+        require(rpsql)
+        a <- psql()
+        a$fetch('SELECT DISTINCT pgc.relname as table, a.attname as name, format_type(a.atttypid, a.atttypmod) as type, a.attnotnull as not_null, com.description as comment, coalesce(i.indisprimary,false) as primary_key, def.adsrc as default FROM pg_attribute a JOIN pg_class pgc ON pgc.oid = a.attrelid LEFT JOIN pg_index i ON (pgc.oid = i.indrelid AND i.indkey[0] = a.attnum) LEFT JOIN pg_description com on (pgc.oid = com.objoid AND a.attnum = com.objsubid) LEFT JOIN pg_attrdef def ON (a.attrelid = def.adrelid AND a.attnum = def.adnum) WHERE a.attnum > 0 AND pgc.oid = a.attrelid AND pg_table_is_visible(pgc.oid) AND NOT a.attisdropped ORDER BY 1, 2')
+      },
+      stop('Unsupported connection ...')
+    )
+  }, error = function(e) {
+    message('ERROR table info', e)
+  }, finally = {
+    message('Table info ...')
+  })
+  
+  return(output)
+}
 
 #' @export
 job_app <- function(config = '~/.rjobs.yaml') {
@@ -8,7 +31,8 @@ job_app <- function(config = '~/.rjobs.yaml') {
   library(shinydashboard)
   
   init(config)
-  conns <- names(suppressWarnings(yaml.load_file(config)$connections))
+  config_lst <- suppressWarnings(yaml.load_file(config))
+  conns <- names(config_lst$connections)
   
   js_click_callback <- function(input_var) {
     sprintf("function(table) {
@@ -64,6 +88,9 @@ job_app <- function(config = '~/.rjobs.yaml') {
           ),
           box(title = 'Query', width = 6,
             verbatimTextOutput('job_info')
+          ),
+          box(title = 'Database Columns & Tables', width = 12,
+            dataTableOutput(outputId = 'table_info')
           )
         )
       )
@@ -156,12 +183,16 @@ job_app <- function(config = '~/.rjobs.yaml') {
         sapply(j[str_is_num(names(j))], function(i) i[[1]])
       })
       
+      output$table_info <- renderDataTable({
+        get_table_info(config_lst$connections[[input$conn]]$src)
+      }, options = list(pageLength = 10))
+      
       output$downloadData <- downloadHandler(
         filename = function() { paste('myreport', '.xlsx', sep='') },
         content = function(file) {
           jobs <- isolate(selected_jobs())
           lst <- get_jobs_output(jobs)
-          lst$SOURCE_INFO <- info()[job_id %in% names(lst)]
+          lst$SOURCE_INFO <- info()[job_id %in% jobs]
           df_to_xlsx(lst, file)
       })
     }
