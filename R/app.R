@@ -45,6 +45,7 @@ job_app <- function(config = '~/.rjobs.yaml') {
         aceEditor('query', '', mode = 'sql', theme = 'github', fontSize = 12),
         HTML('<center>'),
         actionButton('add', ' Add', icon = icon('plus')),
+        actionButton('add_run', ' Run', icon = icon('play')),
         HTML('</center>')
       ),
       dashboardBody(
@@ -76,12 +77,9 @@ job_app <- function(config = '~/.rjobs.yaml') {
           `Added At` = as.character(as.Date(created_at)),
           `Data Source` = conn,
           `Description` = desc,
-          `Finished At` = ifelse(status == 'ended',
-            as.character(ended_at),
-            NA
-          ),
+          `Finished At` = ifelse(status == 'ended', ended_at, NA),
           `Query Time (s)` = ifelse(status == 'ended',
-            round(as.numeric(difftime(ended_at, started_at, units = 'secs')), 1),
+            round(as.numeric(difftime(as.POSIXct(ended_at), as.POSIXct(started_at), units = 'secs')), 1),
             NA
           ),
           ` ` = swapply(status,
@@ -123,6 +121,14 @@ job_app <- function(config = '~/.rjobs.yaml') {
         if (input$add == 0) return()
         job_id <- create_job(isolate(input$conn), isolate(input$query), isolate(input$desc))
         message(sprintf('%s added ...', job_id))
+      })
+      
+      observe({
+        print(input$add_run)
+        if (input$add_run == 0) return()
+        job_id <- create_job(isolate(input$conn), isolate(input$query), isolate(input$desc))
+        message(sprintf('%s added ...', job_id))
+        start_job(job_id)
       })
       
       observe({

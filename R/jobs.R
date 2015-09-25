@@ -37,14 +37,14 @@ start_job <- function(job_id) {
 
 #' @export
 info <- function() {
-  DT <- rbindlist(lapply(redisKeys(), function(i) 
-    cbind(job_id = i, as.data.table(lapply(redisHMGet(i, c('created_at', 'user', 'conn', 'desc', 'query', 'started_at', 'ended_at', 'status', 'message')), function(i) if (is.null(i)) NA else i)))
-  ), use.names = T, fill = T)
-  DT[, c('created_at', 'started_at', 'ended_at') := list(
-    as.POSIXct(created_at, origin = '1970-01-01'),
-    as.POSIXct(started_at, origin = '1970-01-01'),
-    as.POSIXct(ended_at, origin = '1970-01-01')
-  )]
+  DT <- rbindlist(lapply(redisKeys(), function(i) {
+    cbind(job_id = i, as.data.table(lapply(redisHMGet(i, c('created_at', 'user', 'conn', 'desc', 'query', 'started_at', 'ended_at', 'status', 'message')), function(i) if (is.null(i)) NA_character_ else as.character(i))))
+  }), use.names = T, fill = T)
+#   DT[, c('created_at', 'started_at', 'ended_at') := list(
+#     as.POSIXct(created_at, origin = '1970-01-01'),
+#     as.POSIXct(started_at, origin = '1970-01-01'),
+#     as.POSIXct(ended_at, origin = '1970-01-01')
+#   )]
   return(DT)
 }
 
